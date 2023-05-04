@@ -4,12 +4,16 @@ import {
   HttpClientTestingModule,
   HttpTestingController,
 } from '@angular/common/http/testing';
-import { HttpHeaders } from '@angular/common/http';
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { of } from 'rxjs';
 
 describe('ApiService', () => {
   let service: ApiService;
   let httpMock: HttpTestingController;
   let mockConfig: ApiConfigImpl;
+  let headers = new HttpHeaders({
+    'CST': 'test-cst', 'X-SECURITY-TOKEN': 'test-security-token'
+  });
 
   beforeEach(() => {
     mockConfig = {
@@ -76,5 +80,43 @@ describe('ApiService', () => {
       status: 200,
       statusText: 'OK',
     });
+  });
+
+
+  it('should return transactions from the server', (done) => {
+    const mockTransactions = [{ id: 1, amount: 100 }, { id: 2, amount: 200 }];
+
+    spyOn(service, 'authenticateSession').and.returnValue(of(headers));
+    service.getTransactions().subscribe((transactions) => {
+      expect(transactions).toEqual(mockTransactions);
+      done();
+    });
+
+    const req = httpMock.expectOne(`${mockConfig.baseUrl}history/transactions?type=TRADE&from=${new Date().toISOString().slice(0, 19)}&to=${new Date().toISOString().slice(0, 19)}`);
+    expect(req.request.method).toBe('GET');
+    req.flush({ transactions: mockTransactions });
+  });
+
+  it('should handle errors when fetching transactions', (done) => {
+    spyOn(service, 'authenticateSession').and.returnValue(of(headers));
+    const fromDate = new Date('2022-01-01');
+    const toDate = new Date('2022-01-31');
+
+    service.getTransactions(fromDate, toDate).subscribe({
+      next: () => {
+        fail('getTransactions() should have thrown an error');
+      },
+      error: (error) => {
+        expect(error).toBe('An error occurred while fetching transactions.');
+        done();
+      }
+    });
+
+    const req = httpMock.expectOne(
+      `${mockConfig.baseUrl}history/transactions?type=TRADE&from=2022-01-01T00:00:00&to=2022-01-31T00:00:00`
+    );
+    expect(req.request.method).toBe('GET');
+
+    req.flush(null, {status: 400, statusText: 'Bad Request'});
   });
 });

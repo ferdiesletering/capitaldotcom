@@ -1,5 +1,14 @@
 import { Injectable } from '@angular/core';
-import { map, mergeMap, of } from 'rxjs';
+import {
+  Observable,
+  catchError,
+  interval,
+  map,
+  mergeMap,
+  switchMap,
+  tap,
+  throwError,
+} from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 interface ApiConfig {
@@ -11,13 +20,13 @@ interface ApiConfig {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ApiService {
-  constructor(
-    private config: ApiConfigImpl,
-    private httpClient: HttpClient
-  ) {}
+  private readonly intervalTime = 3 * 60 * 1000;
+  private interval$: Observable<any> | undefined;
+
+  constructor(private config: ApiConfigImpl, private httpClient: HttpClient) {}
 
   private getHeaders() {
     return new HttpHeaders({
@@ -26,7 +35,7 @@ export class ApiService {
     });
   }
 
-  public authenticateSession() {
+  public authenticateSession():Observable<HttpHeaders> {
     let headers = new HttpHeaders({
       'Content-Type': 'application/json',
       'X-CAP-API-KEY': this.config.apiKey,
@@ -50,34 +59,51 @@ export class ApiService {
             'X-SECURITY-TOKEN',
             res.headers.get('X-SECURITY-TOKEN') || ''
           );
-          return res;
-        })
+
+          return new HttpHeaders({
+            'Content-Type': 'application/json',
+            'X-SECURITY-TOKEN': res.headers.get('X-SECURITY-TOKEN') || '',
+            'CST': res.headers.get('CST') || '',
+          });
+        }),
+        tap(() => this.pingSession())
       );
   }
 
-  public getTransactions(from: Date = new Date(), to: Date = new Date()) {
-    const headers = this.getHeaders();
+  public pingSession() {
+    if (!this.interval$) {
+      this.interval$ = interval(this.intervalTime).pipe(
+        switchMap(() =>
+          this.httpClient.get(`${this.config.baseUrl}ping`, {
+            headers: this.getHeaders(),
+          })
+        ),
+        catchError(() => this.handleError())
+      );
+    }
 
+    this.interval$.subscribe(() => console.log('ping service'));
+  }
+
+  private handleError(): Observable<never> {
+    return throwError(() => new Error('Cannot ping service'));
+  }
+
+  public getTransactions(from: Date = new Date(), to: Date = new Date()) {
     const formatFrom = from.toISOString().slice(0, 19);
     const formatTo = to.toISOString().slice(0, 19);
 
-    this.httpClient
-      .get(
-        `${this.config.baseUrl}history/activity?from=${formatFrom}&to=${formatTo}&detailed=true&filter=type==POSITION`,
-        { headers: headers }
-      )
-      .subscribe((x) => {
-        console.log(x);
-      });
-
     return this.authenticateSession().pipe(
-      mergeMap(() =>
-        this.httpClient.get(
+      mergeMap((headers:HttpHeaders) => {
+        return this.httpClient.get(
           `${this.config.baseUrl}history/transactions?type=TRADE&from=${formatFrom}&to=${formatTo}`,
           { headers: headers }
-        )
-      ),
-      map((res: any) => res.transactions)
+        );
+      }),
+      map((res: any) => res.transactions),
+      catchError(() => {
+        return throwError(() => 'An error occurred while fetching transactions.');
+      })
     );
   }
 
