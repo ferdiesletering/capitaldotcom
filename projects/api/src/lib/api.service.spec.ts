@@ -1,11 +1,11 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { ApiService, ApiConfigImpl } from './api.service';
 import {
   HttpClientTestingModule,
   HttpTestingController,
 } from '@angular/common/http/testing';
-import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { of } from 'rxjs';
+import {  HttpClient, HttpHeaders } from '@angular/common/http';
+import { of, throwError } from 'rxjs';
 
 describe('ApiService', () => {
   let service: ApiService;
@@ -14,6 +14,7 @@ describe('ApiService', () => {
   let headers = new HttpHeaders({
     'CST': 'test-cst', 'X-SECURITY-TOKEN': 'test-security-token'
   });
+  let httpClientSpy: jasmine.SpyObj<HttpClient>;
 
   beforeEach(() => {
     mockConfig = {
@@ -119,4 +120,50 @@ describe('ApiService', () => {
 
     req.flush(null, {status: 400, statusText: 'Bad Request'});
   });
+
+  it('should return headers with CST and X-SECURITY-TOKEN', () => {
+    localStorage.setItem('CST', 'test-cst');
+    localStorage.setItem('X-SECURITY-TOKEN', 'test-token');
+
+    const headers = service.getHeaders();
+
+    expect(headers.get('CST')).toEqual(localStorage.getItem('CST'));
+    expect(headers.get('X-SECURITY-TOKEN')).toEqual(localStorage.getItem('X-SECURITY-TOKEN'));
+  });
+
+  it('should return headers without CST and X-SECURITY-TOKEN if not present in localStorage', () => {
+    const headers = service.getHeaders();
+    expect(headers.get('CST')).toEqual('');
+  });
+
+  it('should start interval and ping server', fakeAsync(() => {
+    const pingUrl = `${mockConfig.baseUrl}ping`;
+
+    // Call the function
+    service.pingSession();
+
+    tick(service.intervalTime)
+
+    // Expect a request to be made immediately
+    const req1 = httpMock.expectOne(pingUrl);
+    expect(req1.request.method).toEqual('GET');
+    req1.flush({});
+
+    // Expect no more requests to be made until the interval has passed
+    httpMock.expectNone(pingUrl);
+
+    // Advance the clock and expect another request to be made
+    tick(service.intervalTime);
+    const req2 = httpMock.expectOne(pingUrl);
+    expect(req2.request.method).toEqual('GET');
+    req2.flush({});
+
+    // Expect no more requests to be made until the interval has passed again
+    httpMock.expectNone(pingUrl);
+
+    // Unsubscribe and expect no more requests to be made
+    if( service.interval$ ) {
+      service.interval$.unsubscribe();
+    }
+  }));
 });
