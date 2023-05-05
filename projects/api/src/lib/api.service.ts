@@ -99,7 +99,7 @@ export class ApiService {
     }
   }
 
-  private handleError(): Observable<never> {
+  public handleError(): Observable<never> {
     return throwError(() => new Error('Cannot ping service'));
   }
 

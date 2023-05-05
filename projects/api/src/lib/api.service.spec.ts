@@ -166,4 +166,26 @@ describe('ApiService', () => {
       service.interval$.unsubscribe();
     }
   }));
+
+  it('should stop the ping session', () => {
+    service.pingSession(); // start the ping session
+    service.stopPingSession(); // stop the ping session
+
+    expect(service['interval$']).toBeUndefined();
+  });
+
+  it('should return an Observable that throws an error', () => {
+    const error = new Error('Cannot ping service');
+
+    service.handleError().subscribe({
+      error: (err) => {
+        expect(err).toEqual(error);
+      },
+    });
+  });
+
+  it('should test the ApiConfigImpl interface', () => {
+    const config = new ApiConfigImpl();
+    expect(config).toBeTruthy();
+  });
 });
