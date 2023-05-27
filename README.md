@@ -1,5 +1,7 @@
 [![codecov](https://codecov.io/gh/ferdiesletering/capitaldotcom/branch/main/graph/badge.svg?token=ONDWM6LX9H)](https://codecov.io/gh/ferdiesletering/capitaldotcom)
 
+[![Node.js CI](https://github.com/ferdiesletering/capitaldotcom/actions/workflows/node.js.yml/badge.svg?branch=main)](https://github.com/ferdiesletering/capitaldotcom/actions/workflows/node.js.yml)
+
 # Capitaldotcom
 
 Project is a angular library wrapper for the Capitol.com API
