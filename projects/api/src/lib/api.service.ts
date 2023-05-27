@@ -13,6 +13,7 @@ import {
   throwError,
 } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Positions } from './types'
 
 interface ApiConfig {
   apiKey: string;
@@ -21,6 +22,8 @@ interface ApiConfig {
   identifier: string;
   password: string;
 }
+
+
 
 @Injectable({
   providedIn: 'root',
@@ -123,15 +126,19 @@ export class ApiService {
     );
   }
 
-  // getOpenPositions() {
-  //   const headers = this.getHeaders();
-
-  //   this.httpClient
-  //     .get(`${this.config.baseUrl}positions`, { headers: headers })
-  //     .subscribe((x) => {
-  //       console.log(x);
-  //     });
-  // }
+  getOpenPositions() {
+    return this.authenticateSession().pipe(
+      mergeMap((headers: HttpHeaders) => {
+        return this.httpClient.get(`${this.config.baseUrl}positions`, {
+          headers: headers,
+        });
+      }),
+      map((res:any) => res.positions as Positions),
+      catchError(() => {
+        return throwError(() => 'An error occurred while fetching positions.');
+      })
+    );
+  }
 }
 
 export class ApiConfigImpl implements ApiConfig {

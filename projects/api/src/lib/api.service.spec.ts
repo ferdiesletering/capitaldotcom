@@ -6,6 +6,8 @@ import {
 } from '@angular/common/http/testing';
 import {  HttpClient, HttpHeaders } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
+import { positions } from './dummy';
+import { Positions } from './types';
 
 describe('ApiService', () => {
   let service: ApiService;
@@ -14,7 +16,6 @@ describe('ApiService', () => {
   let headers = new HttpHeaders({
     'CST': 'test-cst', 'X-SECURITY-TOKEN': 'test-security-token'
   });
-  let httpClientSpy: jasmine.SpyObj<HttpClient>;
 
   beforeEach(() => {
     mockConfig = {
@@ -187,5 +188,22 @@ describe('ApiService', () => {
   it('should test the ApiConfigImpl interface', () => {
     const config = new ApiConfigImpl();
     expect(config).toBeTruthy();
+  });
+
+  it('should return positions from getOpenPositions', (done) => {
+    // write a testcase for getOpenPositions
+    const mockPositions = positions
+
+    spyOn(service, 'authenticateSession').and.returnValue(of(headers));
+    service.getOpenPositions().subscribe((result:any) => {
+      expect(result).toEqual(mockPositions);
+      done();
+    });
+
+    const req = httpMock.expectOne(`${mockConfig.baseUrl}positions`);
+    expect(req.request.method).toBe('GET');
+    req.flush({ positions: mockPositions });
+
+
   });
 });
