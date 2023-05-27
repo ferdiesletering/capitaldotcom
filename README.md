@@ -1,6 +1,8 @@
+[![codecov](https://codecov.io/gh/ferdiesletering/capitaldotcom/branch/main/graph/badge.svg?token=ONDWM6LX9H)](https://codecov.io/gh/ferdiesletering/capitaldotcom)
+
 # Capitaldotcom
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 15.0.5.
+Project is a angular library wrapper for the Capitol.com API
 
 ## Link the package
 1. Run `npm link ../../package/dist`
