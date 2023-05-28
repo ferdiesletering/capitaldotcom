@@ -4,17 +4,17 @@ import {
   HttpClientTestingModule,
   HttpTestingController,
 } from '@angular/common/http/testing';
-import {  HttpClient, HttpHeaders } from '@angular/common/http';
-import { of, throwError } from 'rxjs';
+import { HttpHeaders } from '@angular/common/http';
+import { of } from 'rxjs';
 import { positions } from './dummy';
-import { Positions } from './types';
 
 describe('ApiService', () => {
   let service: ApiService;
   let httpMock: HttpTestingController;
   let mockConfig: ApiConfigImpl;
   let headers = new HttpHeaders({
-    'CST': 'test-cst', 'X-SECURITY-TOKEN': 'test-security-token'
+    CST: 'test-cst',
+    'X-SECURITY-TOKEN': 'test-security-token',
   });
 
   beforeEach(() => {
@@ -84,9 +84,11 @@ describe('ApiService', () => {
     });
   });
 
-
   it('should return transactions from the server', (done) => {
-    const mockTransactions = [{ id: 1, amount: 100 }, { id: 2, amount: 200 }];
+    const mockTransactions = [
+      { id: 1, amount: 100 },
+      { id: 2, amount: 200 },
+    ];
 
     spyOn(service, 'authenticateSession').and.returnValue(of(headers));
     service.getTransactions().subscribe((transactions) => {
@@ -94,7 +96,11 @@ describe('ApiService', () => {
       done();
     });
 
-    const req = httpMock.expectOne(`${mockConfig.baseUrl}history/transactions?type=TRADE&from=${new Date().toISOString().slice(0, 19)}&to=${new Date().toISOString().slice(0, 19)}`);
+    const req = httpMock.expectOne(
+      `${mockConfig.baseUrl}history/transactions?type=TRADE&from=${new Date()
+        .toISOString()
+        .slice(0, 19)}&to=${new Date().toISOString().slice(0, 19)}`
+    );
     expect(req.request.method).toBe('GET');
     req.flush({ transactions: mockTransactions });
   });
@@ -111,7 +117,7 @@ describe('ApiService', () => {
       error: (error) => {
         expect(error).toBe('An error occurred while fetching transactions.');
         done();
-      }
+      },
     });
 
     const req = httpMock.expectOne(
@@ -119,7 +125,7 @@ describe('ApiService', () => {
     );
     expect(req.request.method).toBe('GET');
 
-    req.flush(null, {status: 400, statusText: 'Bad Request'});
+    req.flush(null, { status: 400, statusText: 'Bad Request' });
   });
 
   it('should return headers with CST and X-SECURITY-TOKEN', () => {
@@ -129,7 +135,9 @@ describe('ApiService', () => {
     const headers = service.getHeaders();
 
     expect(headers.get('CST')).toEqual(localStorage.getItem('CST'));
-    expect(headers.get('X-SECURITY-TOKEN')).toEqual(localStorage.getItem('X-SECURITY-TOKEN'));
+    expect(headers.get('X-SECURITY-TOKEN')).toEqual(
+      localStorage.getItem('X-SECURITY-TOKEN')
+    );
   });
 
   it('should return headers without CST and X-SECURITY-TOKEN if not present in localStorage', () => {
@@ -143,7 +151,7 @@ describe('ApiService', () => {
     // Call the function
     service.pingSession();
 
-    tick(service.intervalTime)
+    tick(service.intervalTime);
 
     // Expect a request to be made immediately
     const req1 = httpMock.expectOne(pingUrl);
@@ -163,9 +171,19 @@ describe('ApiService', () => {
     httpMock.expectNone(pingUrl);
 
     // Unsubscribe and expect no more requests to be made
-    if( service.interval$ ) {
+    if (service.interval$) {
       service.interval$.unsubscribe();
     }
+  }));
+
+  it('should handle errors when calling ping sesssion', fakeAsync(() => {
+    const pingUrl = `${mockConfig.baseUrl}ping`;
+
+    service.pingSession();
+    tick(service.intervalTime);
+
+    const req = httpMock.expectOne(pingUrl);
+    req.flush('', { status: 500, statusText: 'Error' });
   }));
 
   it('should stop the ping session', () => {
@@ -176,9 +194,9 @@ describe('ApiService', () => {
   });
 
   it('should return an Observable that throws an error', () => {
-    const error = new Error('Cannot ping service');
+    const error = new Error('error');
 
-    service.handleError().subscribe({
+    service.handleError('error').subscribe({
       error: (err) => {
         expect(err).toEqual(error);
       },
@@ -192,10 +210,10 @@ describe('ApiService', () => {
 
   it('should return positions from getOpenPositions', (done) => {
     // write a testcase for getOpenPositions
-    const mockPositions = positions
+    const mockPositions = positions;
 
     spyOn(service, 'authenticateSession').and.returnValue(of(headers));
-    service.getOpenPositions().subscribe((result:any) => {
+    service.getOpenPositions().subscribe((result: any) => {
       expect(result).toEqual(mockPositions);
       done();
     });
@@ -203,7 +221,22 @@ describe('ApiService', () => {
     const req = httpMock.expectOne(`${mockConfig.baseUrl}positions`);
     expect(req.request.method).toBe('GET');
     req.flush({ positions: mockPositions });
+  });
 
+  it('should return an Observable that throws an error for getOpenPositions', (done) => {
+    const error = new Error('error');
 
+    spyOn(service, 'authenticateSession').and.returnValue(of(headers));
+    service.getOpenPositions().subscribe({
+      error: (error) => {
+        expect(error).toEqual(
+          new Error('An error occurred while fetching positions.')
+        );
+        done();
+      },
+    });
+
+    const req = httpMock.expectOne(`${mockConfig.baseUrl}positions`);
+    req.flush('error', { status: 500, statusText: 'Error' });
   });
 });

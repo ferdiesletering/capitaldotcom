@@ -12,7 +12,7 @@ import {
   tap,
   throwError,
 } from 'rxjs';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Positions } from './types'
 
 interface ApiConfig {
@@ -22,9 +22,6 @@ interface ApiConfig {
   identifier: string;
   password: string;
 }
-
-
-
 @Injectable({
   providedIn: 'root',
 })
@@ -86,10 +83,13 @@ export class ApiService {
               headers: this.getHeaders(),
             })
           ),
-          catchError(() => this.handleError()),
+          catchError((error: HttpErrorResponse) => {
+            this.handleError(error.statusText);
+            return this.unsubscribe$;
+          }),
           takeUntil(this.unsubscribe$) // unsubscribe when `unsubscribe$` emits
         )
-        .subscribe(() => console.log('ping service'));
+        .subscribe(() => console.log('ping service'))
     }
   }
 
@@ -102,8 +102,8 @@ export class ApiService {
     }
   }
 
-  public handleError(): Observable<never> {
-    return throwError(() => new Error('Cannot ping service'));
+  public handleError(error: string): Observable<never> {
+    return throwError(() => new Error(error));
   }
 
   public getTransactions(from: Date = new Date(), to: Date = new Date()) {
@@ -135,7 +135,7 @@ export class ApiService {
       }),
       map((res:any) => res.positions as Positions),
       catchError(() => {
-        return throwError(() => 'An error occurred while fetching positions.');
+        return this.handleError('An error occurred while fetching positions.')
       })
     );
   }
