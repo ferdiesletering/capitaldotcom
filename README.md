@@ -3,7 +3,7 @@
 
 # Capitaldotcom
 
-Project is a angular library wrapper for the Capitol.com API
+Project is a angular library wrapper for the Capital.com API
 
 ## Link the package
 1. Run `npm link ../../package/dist`
