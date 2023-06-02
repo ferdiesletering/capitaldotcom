@@ -1,5 +1,5 @@
 {
-  "name": "api",
+  "name": "@ferdiesletering/capitaldotcom/api",
   "version": "0.0.1",
   "peerDependencies": {
     "@angular/common": "^15.0.0",
@@ -7,5 +7,11 @@
   },
   "dependencies": {
     "tslib": "^2.3.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:ferdiesletering/capitaldotcom.git"
+  },
+  "publishConfig": {
+    "@ferdiesletering:registry": "https://npm.pkg.github.com"
 }
