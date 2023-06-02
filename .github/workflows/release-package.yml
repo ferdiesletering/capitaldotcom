@@ -32,7 +32,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
         run: |
-          npm build
+          npm run build
           cd dist/api
           npm publish
 
