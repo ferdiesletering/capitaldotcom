@@ -14,7 +14,6 @@ jobs:
           node-version: 16
       - run: npm ci
       - run: npm test
-      - run: npm
 
   publish-gpr:
     needs: build
@@ -29,10 +28,11 @@ jobs:
           node-version: 16
           registry-url: https://npm.pkg.github.com/
       - run: npm ci
-      - run: npm build
-      - name: 'Publish from dist'
-        with:
-          command: npm publish
-          working-directory: dist/api
+      - name: Release npm package
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        run: |
+          npm build
+          cd dist/api
+          npm publish
+
