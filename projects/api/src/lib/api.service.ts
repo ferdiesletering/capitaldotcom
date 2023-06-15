@@ -133,7 +133,7 @@ export class ApiService {
           headers: headers,
         });
       }),
-      map((res:any) => res.positions as Positions),
+      map((res:any) => res.positions as Positions[]),
       catchError(() => {
         return this.handleError('An error occurred while fetching positions.')
       })
